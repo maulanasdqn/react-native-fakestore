@@ -1,35 +1,33 @@
-import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
   FlatList,
   Image,
-  ActivityIndicator,
-  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
 } from 'react-native';
-import axios from 'axios';
+import {useHomeScreen} from './hooks/use-home-screen';
+import Icon from 'react-native-vector-icons/Ionicons';
+import {useNavigation} from '@react-navigation/native';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {RootStackParamList} from '../types';
 
 export const HomeScreen = () => {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const {data, styles} = useHomeScreen();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
-  const fetchProducts = async () => {
-    try {
-      const res = await axios.get('https://fakestoreapi.com/products');
-      setProducts(res.data);
-    } catch (err) {
-      console.error('Failed to fetch products:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchProducts();
-  }, []);
+  const renderCategory = (label: string, icon: any) => (
+    <TouchableOpacity style={styles.categoryItem}>
+      <Icon name={icon} size={24} color="#555" />
+      <Text style={styles.categoryLabel}>{label}</Text>
+    </TouchableOpacity>
+  );
 
   const renderItem = ({item}: {item: any}) => (
-    <View style={styles.card}>
+    <TouchableOpacity
+      style={styles.card}
+      onPress={() => navigation.navigate('ProductDetail', {product: item})}>
       <Image
         source={{uri: item.image}}
         style={styles.image}
@@ -39,55 +37,39 @@ export const HomeScreen = () => {
         {item.title}
       </Text>
       <Text style={styles.price}>${item.price}</Text>
-    </View>
+    </TouchableOpacity>
   );
-
-  if (loading) {
-    return (
-      <View style={styles.loader}>
-        <ActivityIndicator size="large" color="#000" />
-      </View>
-    );
-  }
 
   return (
-    <FlatList
-      data={products}
-      renderItem={renderItem}
-      keyExtractor={item => item.id.toString()}
-      contentContainerStyle={styles.list}
-    />
+    <ScrollView contentContainerStyle={styles.container}>
+      <View style={styles.banner}>
+        <Text style={styles.bannerTitle}>Mens T-Shirt</Text>
+        <Text style={styles.bannerDesc}>The perfect fit for everyday wear</Text>
+        <Text style={styles.bannerDesc}>Extraordinary Visual & Power</Text>
+        <TouchableOpacity style={styles.shopNowBtn}>
+          <Text style={styles.shopNowText}>Shop Now</Text>
+        </TouchableOpacity>
+      </View>
+
+      <Text style={styles.sectionTitle}>Categories</Text>
+      <View style={styles.categoryRow}>
+        {renderCategory('Shirt', 'shirt-outline')}
+        {renderCategory('Pants', 'walk-outline')}
+        {renderCategory('Bag', 'bag-outline')}
+        {renderCategory('Watch', 'watch-outline')}
+        {renderCategory('Jewelry', 'diamond-outline')}
+        {renderCategory('More', 'ellipsis-horizontal')}
+      </View>
+
+      <Text style={styles.sectionTitle}>Flash Deals for You</Text>
+      <FlatList
+        data={data}
+        renderItem={renderItem}
+        keyExtractor={item => item.id.toString()}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.productList}
+      />
+    </ScrollView>
   );
 };
-
-const styles = StyleSheet.create({
-  list: {
-    padding: 16,
-  },
-  card: {
-    marginBottom: 16,
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 16,
-    elevation: 3,
-  },
-  image: {
-    width: '100%',
-    height: 150,
-    marginBottom: 8,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  price: {
-    fontSize: 14,
-    marginTop: 4,
-    color: 'green',
-  },
-  loader: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});
